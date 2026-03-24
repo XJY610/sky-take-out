@@ -133,7 +133,7 @@ public class WeChatPayUtil {
      */
     private String jsapi(String orderNum, BigDecimal total, String description, String openid) throws Exception {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("appid", weChatProperties.getAppid());
+        jsonObject.put("appid", weChatProperties.getAppId());
         jsonObject.put("mchid", weChatProperties.getMchid());
         jsonObject.put("description", description);
         jsonObject.put("out_trade_no", orderNum);
@@ -175,7 +175,7 @@ public class WeChatPayUtil {
             String timeStamp = String.valueOf(System.currentTimeMillis() / 1000);
             String nonceStr = RandomStringUtils.randomNumeric(32);
             ArrayList<Object> list = new ArrayList<>();
-            list.add(weChatProperties.getAppid());
+            list.add(weChatProperties.getAppId());
             list.add(timeStamp);
             list.add(nonceStr);
             list.add("prepay_id=" + prepayId);
