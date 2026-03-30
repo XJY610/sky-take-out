@@ -230,6 +230,9 @@ public class WeChatPayUtil {
         String body = jsonObject.toJSONString();
 
         //调用申请退款接口
-        return post(REFUNDS, body);
+        //return post(REFUNDS, body);
+        // 2. 直接返回一个模拟的成功 JSON 字符串
+        // 微信退款接口的成功响应通常包含 status: "SUCCESS" 或 "PROCESSING"
+        return "{\"status\": \"SUCCESS\", \"message\": \"测试环境模拟退款成功\"}";
     }
 }

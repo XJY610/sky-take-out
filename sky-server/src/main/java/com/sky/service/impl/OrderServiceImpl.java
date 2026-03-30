@@ -185,6 +185,8 @@ public class OrderServiceImpl implements OrderService {
         webSocketServer.sendToAllClient(json);
 
     }
+
+
     /**
      * 用户端订单分页查询
      *
@@ -266,13 +268,15 @@ public class OrderServiceImpl implements OrderService {
         orders.setId(ordersDB.getId());
 
         // 订单处于待接单状态下取消，需要进行退款
-        if (ordersDB.getStatus().equals(Orders.TO_BE_CONFIRMED)) {
+        if (ordersDB.getStatus().equals(Orders.TO_BE_CONFIRMED)
+                && ordersDB.getPayStatus().equals(Orders.PAID)) {
+            BigDecimal orderAmount = ordersDB.getAmount();
             //调用微信支付退款接口
             weChatPayUtil.refund(
                     ordersDB.getNumber(), //商户订单号
                     ordersDB.getNumber(), //商户退款单号
-                    new BigDecimal(0.01),//退款金额，单位 元
-                    new BigDecimal(0.01));//原订单金额
+                    orderAmount,//退款金额，单位 元
+                    orderAmount);//原订单金额
 
             //支付状态修改为 退款
             orders.setPayStatus(Orders.REFUND);
@@ -503,6 +507,31 @@ public class OrderServiceImpl implements OrderService {
         orders.setDeliveryTime(LocalDateTime.now());
 
         orderMapper.update(orders);
+    }
+    /**
+     * 客户催单
+     * @param id
+     */
+    public void reminder(Long id){
+        // 根据id查询订单
+        Orders ordersDB = orderMapper.getById(id);
+
+        // 校验订单是否存在
+        if (ordersDB == null ) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+
+        //通过websocket来向客户端浏览器推送消息 type orderId content
+        //三个数据封装到map
+        Map map = new HashMap();
+        map.put("type",2);//1表示来单提醒 2表示客户催单
+        map.put("orderId",id);
+        map.put("content","订单号："+ ordersDB.getNumber());
+        //转成json格式
+        String json = JSON.toJSONString(map);
+        webSocketServer.sendToAllClient(json);
+
+
     }
 
 
