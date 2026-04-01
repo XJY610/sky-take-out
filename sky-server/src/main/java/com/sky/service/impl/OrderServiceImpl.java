@@ -272,14 +272,22 @@ public class OrderServiceImpl implements OrderService {
                 && ordersDB.getPayStatus().equals(Orders.PAID)) {
             BigDecimal orderAmount = ordersDB.getAmount();
             //调用微信支付退款接口
-            weChatPayUtil.refund(
-                    ordersDB.getNumber(), //商户订单号
-                    ordersDB.getNumber(), //商户退款单号
-                    orderAmount,//退款金额，单位 元
-                    orderAmount);//原订单金额
-
+            //weChatPayUtil.refund(
+            //        ordersDB.getNumber(), //商户订单号
+            //        ordersDB.getNumber(), //商户退款单号
+            //        orderAmount,//退款金额，单位 元
+            //        orderAmount);//原订单金额
+//
             //支付状态修改为 退款
             orders.setPayStatus(Orders.REFUND);
+
+            // 1. 获取当前数据库里的金额
+            BigDecimal currentAmount = ordersDB.getAmount();
+            // 2. 计算扣减后的金额 (当前金额 - 订单金额)
+            BigDecimal newAmount = currentAmount.subtract(orderAmount);
+
+            // 3. 设置回实体类，准备更新到数据库
+            orders.setAmount(newAmount);
         }
 
         // 更新订单状态、取消原因、取消时间
@@ -417,19 +425,28 @@ public class OrderServiceImpl implements OrderService {
 
         //支付状态
         Integer payStatus = ordersDB.getPayStatus();
+        Orders orders = new Orders();
+        orders.setId(ordersDB.getId());
         if (payStatus == Orders.PAID) {
             //用户已支付，需要退款
-            String refund = weChatPayUtil.refund(
-                    ordersDB.getNumber(),
-                    ordersDB.getNumber(),
-                    new BigDecimal(0.01),
-                    new BigDecimal(0.01));
-            log.info("申请退款：{}", refund);
+            //String refund = weChatPayUtil.refund(
+            //        ordersDB.getNumber(),
+            //        ordersDB.getNumber(),
+            //        new BigDecimal(0.01),
+            //        new BigDecimal(0.01));
+            //log.info("申请退款：{}", refund);
+            // 2. 【模拟】修改支付状态为退款
+            orders.setPayStatus(Orders.REFUND);
+            // 3. 【模拟】扣减营业额
+            // 逻辑：新营业额 = 原营业额 - 订单金额
+            BigDecimal currentAmount = ordersDB.getAmount() != null ? ordersDB.getAmount() : BigDecimal.ZERO;
+            // 将计算后的新金额（这里演示减去订单金额，实际可能是减为0，看你的业务逻辑）
+            // 如果你的需求是退款后amount变为0，则直接 subtract(ordersDB.getAmount())
+            orders.setAmount(currentAmount.subtract(ordersDB.getAmount()));
         }
 
         // 拒单需要退款，根据订单id更新订单状态、拒单原因、取消时间
-        Orders orders = new Orders();
-        orders.setId(ordersDB.getId());
+
         orders.setStatus(Orders.CANCELLED);
         orders.setRejectionReason(ordersRejectionDTO.getRejectionReason());
         orders.setCancelTime(LocalDateTime.now());
@@ -447,19 +464,25 @@ public class OrderServiceImpl implements OrderService {
 
         //支付状态
         Integer payStatus = ordersDB.getPayStatus();
+        Orders orders = new Orders();
+        orders.setId(ordersCancelDTO.getId());
         if (payStatus == 1) {
             //用户已支付，需要退款
-            String refund = weChatPayUtil.refund(
-                    ordersDB.getNumber(),
-                    ordersDB.getNumber(),
-                    new BigDecimal(0.01),
-                    new BigDecimal(0.01));
-            log.info("申请退款：{}", refund);
+           //String refund = weChatPayUtil.refund(
+           //        ordersDB.getNumber(),
+           //        ordersDB.getNumber(),
+           //        new BigDecimal(0.01),
+           //        new BigDecimal(0.01));
+           //log.info("申请退款：{}", refund);
+            // 2. 【模拟】修改支付状态为退款
+            orders.setPayStatus(Orders.REFUND);
+
+            // 3. 【模拟】扣减营业额
+            BigDecimal currentAmount = ordersDB.getAmount() != null ? ordersDB.getAmount() : BigDecimal.ZERO;
+            orders.setAmount(currentAmount.subtract(ordersDB.getAmount()));
         }
 
         // 管理端取消订单需要退款，根据订单id更新订单状态、取消原因、取消时间
-        Orders orders = new Orders();
-        orders.setId(ordersCancelDTO.getId());
         orders.setStatus(Orders.CANCELLED);
         orders.setCancelReason(ordersCancelDTO.getCancelReason());
         orders.setCancelTime(LocalDateTime.now());
